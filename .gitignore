@@ -1,0 +1,9 @@
+node_modules/
+build/
+.vs/
+bin/
+obj/
+packages/
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,48 @@
+body {
+    font-family: 'Kanit';
+}
+
+.BKlogin{
+    background-image: url('../img/BK001.jpg');
+    background-size: 100% 100%; 
+}
+
+.Divboxshadow{
+    box-shadow: 10px 10px 5px grey;
+    border-radius: 8px;
+}
+.Divboxshadow:hover{
+    box-shadow: 10px 10px 5px rgb(88, 88, 88);
+}
+
+.headPop{
+    top: 20px;
+}
+.boxImg{
+    width: 150px;
+    height: 120px;
+    padding-right: 10px;
+    position: absolute;
+    float: left;
+}
+
+.Chkbtnckick {
+    color: #485b6f;
+    background-color: #e3e6e7;
+    border-color: #c1c4c4; 
+}
+.btn-default:focus, .btn-default.focus, .btn-default:hover, .btn-default.active, .btn-default:active, .btn-default:disabled, .btn-default.disabled {
+    color: #485b6f !important;
+    background-color: #d5dadb !important;
+    border-color: #b4b8b8 !important;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    background-image: none;
+}
+
+/*
+.active, .Chkbtnckick:hover {
+    background-color: #669900;
+    color: white;
+  }
+  */
