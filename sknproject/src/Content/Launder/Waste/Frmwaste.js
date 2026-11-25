@@ -45,10 +45,10 @@ export default function Frmwaste() {
 
         settxtvalue(inputData);
 
-        if(str == 'Edit'){
+        if (str == 'Edit') {
             setstrOut(false);
             setstrIn(true);
-        }else{
+        } else {
             setstrOut(true);
             setstrIn(false);
         }
@@ -61,36 +61,45 @@ export default function Frmwaste() {
 
     async function closeModal() {
         settxtvalue(inputData);
-
+        setModal(false);
     }
 
+    const toFormData = (obj) => {
+        const formData = new FormData();
+        Object.entries(obj).forEach(([key, value]) => {
+            formData.append(key, value ?? "");
+        });
+        return formData;
+    };
+
     async function Listfabric() {
-
-        fetch(API.dataSource.code + "WasteAPI.php?module=Showlistfabric")
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
-
-                setlistfabric(data);
-
-            })
-            .catch(error => {
-                console.log(error);
-            });
-
+        try {
+            const res = await fetch(`${API.dataSource.url}Waste/Showlistfabric`);
+            if (!res.ok) throw new Error(`โหลดรายการผ้าไม่สำเร็จ (${res.status})`);
+            const data = await res.json();
+            setlistfabric(data);
+        } catch (error) {
+            console.error("[Listfabric Error]:", error);
+        }
     }
 
     async function Showdata() {
+        try {
+            const res = await fetch(`${API.dataSource.url}Waste?officeID=${txtvalue.t_officeid}`);
+            if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (${res.status})`);
+            const json = await res.json();
 
-        fetch(API.dataSource.code + "WasteAPI.php?module=Showdata&officeID=" + txtvalue.t_officeid)
-            .then(res => res.json())
-            .then(json => {
-                //alert(json);
-                let Mydata = json;
-                let { rows } = json;
-                rows = Mydata.map((row, key) => ({
+            const rows = json.map((row, key) => {
+                const rowId = row.id || row.ID;
+                const wasteNum = parseInt(row.wastenum ?? row.Wastenum ?? 0);
+                const wasteNumIn = parseInt(row.wastenumin ?? row.Wastenumin ?? 0);
+
+                return {
                     ...row,
+                    FabricID: row.fabricID || row.FabricID,
+                    FabricName: row.fabricName || row.FabricName,
+                    Wastedate: row.wastedate || row.Wastedate,
+                    Other: row.other || row.Other,
                     Edit: (
                         <MDBBadge
                             className='w-0'
@@ -98,174 +107,144 @@ export default function Frmwaste() {
                             key={key}
                             style={{ float: 'right' }}
                         >
-
-                            <button className="btn btn-default btn-xs m-r-5" style={{ cursor: 'pointer' }} data-toggle="tooltip" data-original-title="Edit" onClick={() => openModal(row.ID, 'Edit')}><i className="fa fa-pencil font-14" title='จัดการข้อมูลผ้า' /></button>
-                            <button className="btn btn-default btn-xs" style={{ cursor: 'pointer' }} data-toggle="tooltip" data-original-title="Delete" onClick={() => openModal(row.ID, 'Add')}><i className="fa fa-plus-square" /></button>
-
+                            <button className="btn btn-default btn-xs m-r-5" style={{ cursor: 'pointer' }} data-toggle="tooltip" data-original-title="Edit" onClick={() => openModal(rowId, 'Edit')}><i className="fa fa-pencil font-14" title='จัดการข้อมูลผ้า' /></button>
+                            <button className="btn btn-default btn-xs" style={{ cursor: 'pointer' }} data-toggle="tooltip" data-original-title="Delete" onClick={() => openModal(rowId, 'Add')}><i className="fa fa-plus-square" /></button>
                         </MDBBadge>
                     ),
-                    Num: (
-                        parseInt(row.Wastenum)-parseInt(row.Wastenumin)
-                    )
-
-                }));
-
-                Mydata = {
-                    columns: [
-                        {
-                            label: 'รหัส',
-                            field: 'FabricID',
-                            sort: 'asc',
-                            width: 20
-                        },
-                        {
-                            label: 'รายการ',
-                            field: 'FabricName',
-                            sort: 'asc',
-                            width: 500
-                        },
-                        {
-                            label: 'จำนวน',
-                            field: 'Num',
-                            sort: 'asc',
-                            width: 200
-                        },
-                        {
-                            label: 'วันที่',
-                            field: 'Wastedate',
-                            sort: 'asc',
-                            width: 200
-                        },
-                        {
-                            label: 'หมายเหตุ',
-                            field: 'Other',
-                            sort: 'asc',
-                            width: 50
-                        },
-                        {
-                            label: '',
-                            field: 'Edit',
-                            sort: 'asc',
-                            width: 20
-                        }
-                    ],
-                    rows
+                    Num: wasteNum - wasteNumIn
                 };
-                setmyData(Mydata);
             });
 
+            setmyData({
+                columns: [
+                    { label: 'รหัส', field: 'FabricID', sort: 'asc', width: 20 },
+                    { label: 'รายการ', field: 'FabricName', sort: 'asc', width: 500 },
+                    { label: 'จำนวน', field: 'Num', sort: 'asc', width: 200 },
+                    { label: 'วันที่', field: 'Wastedate', sort: 'asc', width: 200 },
+                    { label: 'หมายเหตุ', field: 'Other', sort: 'asc', width: 50 },
+                    { label: '', field: 'Edit', sort: 'asc', width: 20 }
+                ],
+                rows
+            });
+        } catch (error) {
+            console.error("[Showdata Error]:", error);
+        }
     }
 
     async function Showdataedit(ID) {
+        try {
+            const res = await fetch(`${API.dataSource.url}Waste/${ID}`);
+            if (!res.ok) throw new Error(`โหลดข้อมูลแก้ไขไม่สำเร็จ (${res.status})`);
+            const data = await res.json();
+            if (!data || data.length === 0) return;
 
-        fetch(API.dataSource.code + "WasteAPI.php?module=Showdataedit&id=" + ID)
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
+            const item = Array.isArray(data) ? data[0] : data;
+            const fabricId = item.fabricID || item.FabricID || "";
+            const fabricNum = item.fabricNum ?? item.FabricNum ?? "";
+            const wasteNum = parseInt(item.wastenum ?? item.Wastenum ?? 0);
+            const wasteNumIn = parseInt(item.wastenumin ?? item.Wastenumin ?? 0);
 
-                settxtvalue({
-                    ...txtvalue,
-                    t_id: ID, t_fabricid: data[0].FabricID, t_cupboard: data[0].FabricNum, t_num: (parseInt(data[0].Wastenum)-parseInt(data[0].Wastenumin)), t_other: data[0].Other,
-                    t_fabricid2: data[0].FabricID, t_cupboard2: data[0].FabricNum, t_num2: data[0].Wastenum,
-                })
-
-            })
-            .catch(error => {
-                console.log(error);
+            settxtvalue({
+                ...txtvalue,
+                t_id: ID,
+                t_fabricid: fabricId,
+                t_cupboard: fabricNum,
+                t_num: wasteNum - wasteNumIn,
+                t_other: item.other || item.Other || "",
+                t_fabricid2: fabricId,
+                t_cupboard2: fabricNum,
+                t_num2: wasteNum,
             });
-
+        } catch (error) {
+            console.error("[Showdataedit Error]:", error);
+        }
     }
 
     async function Onchangselect(even) {
+        try {
+            const res = await fetch(`${API.dataSource.url}Waste/Showstock/${even.value}`);
+            if (!res.ok) throw new Error(`โหลดสต็อกไม่สำเร็จ (${res.status})`);
+            const data = await res.json();
+            const item = Array.isArray(data) ? data[0] : data;
 
-        fetch(API.dataSource.code + "WasteAPI.php?module=Showstock&id=" + even.value)
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
-
-                settxtvalue({ ...txtvalue, t_fabricid: even.value, t_fabricname: even.label, t_cupboard: data[0].FabricNum })
-
-            })
-            .catch(error => {
-                console.log(error);
+            settxtvalue({
+                ...txtvalue,
+                t_fabricid: even.value,
+                t_fabricname: even.label,
+                t_cupboard: item ? (item.fabricNum ?? item.FabricNum ?? "") : ""
             });
-
+        } catch (error) {
+            console.error("[Onchangselect Error]:", error);
+        }
     }
 
     async function Savedata() {
-
         if (txtvalue.t_fabricid == "") {
             alert("กรุณาเลือกรายการด้วยครับ !");
             return false;
         } else if (txtvalue.t_num == "") {
             alert("กรุณาใส่จำนวนผ้าด้วยครับ");
             return false;
-        } else {
+        }
 
-            const method = "POST";
-            const body = new FormData();
-            body.append("tid", txtvalue.t_id);
-            body.append("tfabricid", txtvalue.t_fabricid);
-            body.append("tcupboard", txtvalue.t_cupboard);
-            body.append("tnum", txtvalue.t_num);
-            body.append("tother", txtvalue.t_other);
-            body.append("tfabricid2", txtvalue.t_fabricid2);
-            body.append("tcupboard2", txtvalue.t_cupboard2);
-            body.append("tnum2", txtvalue.t_num2);
-            body.append("tnumin", txtvalue.t_numin);
-            fetch(API.dataSource.code + "WasteAPI.php?module=Inputdata", { method, body })
-                .then(res => res.json())
-                .then(data => {
+        try {
+            const body = toFormData({
+                tid: txtvalue.t_id || "0",
+                tfabricid: txtvalue.t_fabricid,
+                tcupboard: txtvalue.t_cupboard,
+                tnum: txtvalue.t_num,
+                tother: txtvalue.t_other,
+                tfabricid2: txtvalue.t_fabricid2,
+                tcupboard2: txtvalue.t_cupboard2,
+                tnum2: txtvalue.t_num2,
+                tnumin: txtvalue.t_numin,
+            });
 
-                    //alert(JSON.stringify(data, null, "\t"))
+            const res = await fetch(`${API.dataSource.url}Waste`, {
+                method: "POST",
+                body
+            });
 
-                    alert("ระบบได้ทำการบันทึกใบขอเบิกเรียบร้อยแล้วครับ");
+            if (!res.ok) throw new Error(`บันทึกข้อมูลไม่สำเร็จ (${res.status})`);
+            await res.json();
 
-                    Showdata();
-                    settxtvalue(inputData);
-                    setModal(false);
-
-                });
-
+            alert("ระบบได้ทำการบันทึกข้อมูลเรียบร้อยแล้วครับ");
+            Showdata();
+            settxtvalue(inputData);
+            setModal(false);
+        } catch (error) {
+            console.error("[Savedata Error]:", error);
+            alert(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
         }
     }
 
     async function Adddata(ID) {
+        if (!window.confirm("คุณต้องการรับเข้าข้อมูลรายการนี้ใช่หรือไม่ ?")) return;
 
-        var conF = window.confirm("คุณต้องการรับเข้าข้อมูลรายการนี้ใช่หรือไม่ ?");
-        if (conF == true) {
+        try {
+            const res = await fetch(`${API.dataSource.url}Waste/Adddata/${ID}`, {
+                method: "POST"
+            });
+            if (!res.ok) throw new Error(`นำเข้าข้อมูลไม่สำเร็จ (${res.status})`);
+            await res.json();
 
-            fetch(API.dataSource.code + "WasteAPI.php?module=Adddata&id=" + ID)
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
-                    
-                    Showdata();
-                    settxtvalue(inputData)
-                    alert("ระบบได้ทำการนำเข้าข้อมูลเรียบร้อยแล้วครับ !");
-
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-
+            Showdata();
+            settxtvalue(inputData);
+            alert("ระบบได้ทำการนำเข้าข้อมูลเรียบร้อยแล้วครับ !");
+        } catch (error) {
+            console.error("[Adddata Error]:", error);
+            alert(`เกิดข้อผิดพลาดในการนำเข้า: ${error.message}`);
         }
-
     }
 
-    async function onchangenumin(even){
-
-        if(even.target.value > txtvalue.t_num){
-            alert("คุณใส่ข้อมูลไม่ถูกต้อง !")
-            settxtvalue({...txtvalue, t_numin: ''})
+    async function onchangenumin(even) {
+        if (Number(even.target.value) > Number(txtvalue.t_num)) {
+            alert("คุณใส่ข้อมูลไม่ถูกต้อง !");
+            settxtvalue({ ...txtvalue, t_numin: '' });
             return false;
-        }else{
-            settxtvalue({ ...txtvalue, t_numin: even.target.value })
-        }        
-
+        } else {
+            settxtvalue({ ...txtvalue, t_numin: even.target.value });
+        }
     }
 
 
@@ -334,7 +313,7 @@ export default function Frmwaste() {
                                                                 <div className="form-group">
                                                                     <label> รายการผ้า </label>
                                                                     <Select
-                                                                        value={listfabric.find(obj => obj.value === txtvalue.t_fabricid)}
+                                                                        value={listfabric.find(obj => obj.value === txtvalue.t_fabricid) || null}
                                                                         options={listfabric}
                                                                         onChange={even => Onchangselect(even)}
                                                                     />
@@ -356,7 +335,8 @@ export default function Frmwaste() {
 
                                                                 <div className="form-group">
                                                                     <label> หมายเหตุ </label>
-                                                                    <input className="form-control" type="text" placeholder="หมายเหตุ" onChange={(even) => settxtvalue({ ...txtvalue, t_other: even.target.value })} />
+                                                                    <input
+                                                                        className="form-control" type="text" placeholder="หมายเหตุ" value={txtvalue.t_other} onChange={(even) => settxtvalue({ ...txtvalue, t_other: even.target.value })}/>
                                                                 </div>
 
                                                                 <div className="form-group">
