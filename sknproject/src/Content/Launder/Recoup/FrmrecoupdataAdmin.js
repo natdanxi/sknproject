@@ -42,8 +42,7 @@ export default function FrmrecoupdataAdmin() {
         settxtvalue(inputData);
         setofficeid(officeID);
         Showdatadetail(orderID, Recoupid);
-        Showdataprint(Recoupid);
-
+        Showdataprint(Recoupid, officeID);
         setModal(true);
         //setopenmodal(true);
     }
@@ -51,181 +50,149 @@ export default function FrmrecoupdataAdmin() {
     async function closeModal() {
         settxtvalue(inputData);
         setlistOrder([]);
-        document.getElementById("t_str1").checked = false;
-        document.getElementById("t_str2").checked = false;
+        setModal(false);
     }
 
     async function Showdata() {
-
         setloanding(false);
         setmyData([]);
 
-        fetch(API.dataSource.code + "RecoupdataadminAPI.php?module=Showdata")
-            .then(res => res.json())
+        fetch(API.dataSource.url + "RecoupDataAdmin")
+            .then(res => {
+                if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (${res.status})`);
+                return res.json();
+            })
             .then(json => {
-                //alert(json);
-                let Mydata = json;
-                let { rows } = json;
-                rows = Mydata.map((row, key) => ({
-                    ...row,
-                    Edit: (
-                        <>
-                            <button className="btn btn-default btn-xs m-r-5" title="จ่ายผ้า" style={{ cursor: 'pointer' }} data-toggle="tooltip" data-original-title="Edit" onClick={() => openModal(row.Orderid, row.Officeid, row.Recoupid)}><i className="ti-hand-open font-14" /></button>
-                        </>
-                    ),
-                    typestr: (
-                        <>
-                            {
-                                row.Orderseason == "1" ? (
-                                    <span style={{ color: '#23B7E5' }}>เช้า</span>
-                                ) : (
-                                    <span style={{ color: '#23B7E5' }}>บ่าย</span>
-                                )
-                            }
-                        </>
-                    ),
-                    Status: (
-                        <>
-                            {
-                                row.Orderstatus == '0' ? (
-                                    <span style={{ color: '#CCCC66' }}>รอรับเข้า</span>
-                                ) : row.Orderstatus == '1' ? (
-                                    <span style={{ color: '#009900' }}>รอจ่าย</span>
-                                ) : row.Orderstatus == '2' ? (
-                                    <span style={{ color: '#CC0000' }}>ค่างจ่าย</span>
-                                ) : (
-                                    <span style={{ color: '#009900' }}>จ่ายครบแล้ว</span>
-                                )
-                            }
-                        </>
-                    )
+                const rows = json.map((row, key) => {
+                    const orderId = row.orderid || row.Orderid;
+                    const officeId = row.officeid || row.Officeid;
+                    const recoupId = row.recoupid || row.Recoupid;
+                    const season = row.orderseason ?? row.Orderseason;
+                    const status = row.orderstatus ?? row.Orderstatus;
 
-                }));
+                    return {
+                        ...row,
+                        Orderid: orderId,
+                        Recoupid: recoupId,
+                        Officename: row.officename || row.Officename,
+                        Recoupdate: row.recoupdate || row.Recoupdate,
+                        Recouptime: row.recouptime || row.Recouptime,
+                        fullname: row.fullname || row.Fullname,
+                        Edit: (
+                            <>
+                                <button className="btn btn-default btn-xs m-r-5" title="จ่ายผ้า" style={{ cursor: 'pointer' }} data-toggle="tooltip" data-original-title="Edit" onClick={() => openModal(orderId, officeId, recoupId)}><i className="ti-hand-open font-14" /></button>
+                            </>
+                        ),
+                        typestr: (
+                            <>
+                                {
+                                    season == "1" ? (
+                                        <span style={{ color: '#23B7E5' }}>เช้า</span>
+                                    ) : (
+                                        <span style={{ color: '#23B7E5' }}>บ่าย</span>
+                                    )
+                                }
+                            </>
+                        ),
+                        Status: (
+                            <>
+                                {
+                                    status == '0' ? (
+                                        <span style={{ color: '#CCCC66' }}>รอรับเข้า</span>
+                                    ) : status == '1' ? (
+                                        <span style={{ color: '#009900' }}>รอจ่าย</span>
+                                    ) : status == '2' ? (
+                                        <span style={{ color: '#CC0000' }}>ค้างจ่าย</span>
+                                    ) : (
+                                        <span style={{ color: '#009900' }}>จ่ายครบแล้ว</span>
+                                    )
+                                }
+                            </>
+                        )
+                    };
+                });
 
-                Mydata = {
+                const Mydata = {
                     columns: [
-                        {
-                            label: 'เลขที่ใบเบิก',
-                            field: 'Orderid',
-                            sort: 'asc',
-                            width: 20
-                        },
-                        {
-                            label: 'เลขที่จ่าย',
-                            field: 'Recoupid',
-                            sort: 'asc',
-                            width: 500
-                        },
-                        {
-                            label: 'หน่วยงาน',
-                            field: 'Officename',
-                            sort: 'asc',
-                            width: 500
-                        },
-                        {
-                            label: 'วันที่จ่าย',
-                            field: 'Recoupdate',
-                            sort: 'asc',
-                            width: 500
-                        },
-                        {
-                            label: 'เวลา',
-                            field: 'Recouptime',
-                            sort: 'asc',
-                            width: 200
-                        },
-                        {
-                            label: 'เจ้าหน้าที่',
-                            field: 'fullname',
-                            sort: 'asc',
-                            width: 50
-                        },
-                        {
-                            label: 'ช่วงเวลา',
-                            field: 'typestr',
-                            sort: 'asc',
-                            width: 50
-                        },
-                        {
-                            label: 'สถานะ',
-                            field: 'Status',
-                            sort: 'asc',
-                            width: 50
-                        },
-                        {
-                            label: '',
-                            field: 'Edit',
-                            sort: 'asc',
-                            width: 20
-                        }
+                        { label: 'เลขที่ใบเบิก', field: 'Orderid', sort: 'asc', width: 20 },
+                        { label: 'เลขที่จ่าย', field: 'Recoupid', sort: 'asc', width: 500 },
+                        { label: 'หน่วยงาน', field: 'Officename', sort: 'asc', width: 500 },
+                        { label: 'วันที่จ่าย', field: 'Recoupdate', sort: 'asc', width: 500 },
+                        { label: 'เวลา', field: 'Recouptime', sort: 'asc', width: 200 },
+                        { label: 'เจ้าหน้าที่', field: 'fullname', sort: 'asc', width: 50 },
+                        { label: 'ช่วงเวลา', field: 'typestr', sort: 'asc', width: 50 },
+                        { label: 'สถานะ', field: 'Status', sort: 'asc', width: 50 },
+                        { label: '', field: 'Edit', sort: 'asc', width: 20 }
                     ],
                     rows
                 };
                 setmyData(Mydata);
                 setloanding(true);
+            })
+            .catch(error => {
+                console.error("Showdata Error:", error);
+                setloanding(true);
             });
-
     }
 
     async function Showdatadetail(orderID, recoupid) {
-
         setlistOrder([]);
 
-        fetch(API.dataSource.code + "RecoupdataadminAPI.php?module=Showdatadetail&orderid=" + orderID)
+        fetch(API.dataSource.url + "RecoupDataAdmin/" + orderID)
             .then(response => {
+                if (!response.ok) throw new Error(`โหลดรายละเอียดไม่สำเร็จ (${response.status})`);
                 return response.json();
             })
             .then(data => {
+                if (!data || data.length === 0) return;
 
-                settxtvalue({
-                    ...txtvalue,
+                settxtvalue(prev => ({
+                    ...prev,
                     t_id: orderID,
                     t_orderID: orderID,
                     t_recoupid: recoupid,
-                    t_orderstr: data[0].Orderseason,
-                })
+                    t_orderstr: data[0].orderseason ?? data[0].Orderseason ?? '',
+                }));
 
-                for (var i = 0; i < data.length; i++) {
+                const newOrders = data.map((item, i) => {
+                    const borrow = parseInt(item.borrow ?? item.Borrow ?? 0, 10);
+                    const recoup = parseInt(item.recoupnum ?? item.Recoupnum ?? 0, 10);
 
-                    setlistOrder(prevItems => [...prevItems,
-                    {
-                        ID: prevItems.length,
-                        itemfabricid: data[i].FabricID,
-                        itemfabricname: data[i].FabricName,
-                        itemcupboard: data[i].Stocknum,
-                        itembed: data[i].Bed,
-                        itemborrow: parseInt(data[i].Borrow),
-                        itemrecoupnum: parseInt(data[i].Borrow) - parseInt(data[i].Recoupnum),
-                        itemrecoup: parseInt(data[i].Recoupnum),
-                        itempatientum: data[i].Patientnum,
-                        itemother: data[i].Other,
-                    }]);
+                    return {
+                        ID: i,
+                        itemfabricid: item.fabricID || item.FabricID,
+                        itemfabricname: item.fabricName || item.FabricName,
+                        itemcupboard: item.stocknum ?? item.Stocknum,
+                        itembed: item.bed ?? item.Bed,
+                        itemborrow: borrow,
+                        itemrecoupnum: borrow - recoup,
+                        itemrecoup: recoup,
+                        itempatientum: item.patientnum ?? item.Patientnum,
+                        itemother: item.other || item.Other,
+                    };
+                });
 
-                }
-
+                setlistOrder(newOrders);
             })
             .catch(error => {
-                console.log(error);
+                console.error("Showdatadetail Error:", error);
             });
-
     }
 
-    async function Showdataprint(ID) {
+    async function Showdataprint(ID, offID = officeid) {
+        setdataprint([]);
 
-        fetch(API.dataSource.code + "RecoupdataadminAPI.php?module=Showdataprint&id=" + ID + "&officeid=" + officeid)
+        fetch(API.dataSource.url + "RecoupDataAdmin/Print/" + ID + "?officeid=" + offID)
             .then(response => {
+                if (!response.ok) throw new Error(`โหลดข้อมูลพิมพ์ไม่สำเร็จ (${response.status})`);
                 return response.json();
             })
             .then(data => {
-
                 setdataprint(data);
-                //alert(data)
-
             })
             .catch(error => {
-                console.log(error);
+                console.error("Showdataprint Error:", error);
             });
-
     }
 
     return (
@@ -289,7 +256,7 @@ export default function FrmrecoupdataAdmin() {
 
                                                                 </div>
                                                                 <div className="ibox-tools">
-                                                                    
+
                                                                 </div>
                                                             </div>
                                                             <div className="ibox-body">
@@ -321,7 +288,6 @@ export default function FrmrecoupdataAdmin() {
                                                                                     <td> {item.itemrecoupnum} </td>
                                                                                     <td> {item.itemrecoup} </td>
                                                                                     <td> {item.itemother} </td>
-                                                                                    <td> </td>
                                                                                 </tr>
 
                                                                             )
@@ -356,9 +322,9 @@ export default function FrmrecoupdataAdmin() {
 
                         </div>
 
-                        <di hidden="true">
-                            <Frmprint key={dataprint} row={dataprint} ref={(el) => (setcomponentRef(el))} />
-                        </di>
+                        <div style={{ display: 'none' }}>
+                            <Frmprint key={JSON.stringify(dataprint)} row={dataprint} ref={(el) => (setcomponentRef(el))} />
+                        </div>
 
                     </div>
                 </Modal>
@@ -366,7 +332,7 @@ export default function FrmrecoupdataAdmin() {
             </sesion>
 
             <span className="loader" hidden={loanding} />
-            
+
         </div>
     )
 }
